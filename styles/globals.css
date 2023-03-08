@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 3 layers: base, components, utilities. 
+Can do CSS styling in any of the layers (body can go in components layer and not base) but it is convention and better practice to separate layers correctly? */
+
+/* base layer can be thought of as html, body, heading */
+@layer base {
+    body {
+        /* Set background color and text for body */
+        /* Set scrollbar. Need to use ! (important), but why? seems to work without it */
+        @apply bg-[#141414] text-white !scrollbar-thin !scrollbar-track-transparent !scrollbar-thumb-red-600;
+    }
+
+    /* Style header bar */
+    header {
+        @apply fixed top-0 z-50 flex w-full items-center justify-between px-4 py-4 transition-all lg:px-10 lg:py-6;
+    }
+}
+
+/* components can be thought of as custom classNames */
+@layer components {
+    /* .headerLink for the links in the header (Home, TV Shows...) */
+    .headerLink {
+        /* @apply for Tailwind CSS */
+        @apply cursor-pointer text-sm font-light text-[#e5e5e5] transition duration-[.4s] hover:text-[#b3b3b3];
+        /* to use hex color value for text use square brackets: text-[].
+        Also applies to using custom values for other properties? */
+    }
+
+    .bannerButton {
+        @apply flex items-center gap-x-2 rounded px-5 py-1.5 text-sm font-semibold transition hover:opacity-75 md:py-2.5 md:px-8 md:text-xl;
+    }
+}
