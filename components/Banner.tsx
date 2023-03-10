@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { baseUrl } from '../constants/movie'
 import {FaPlay} from "react-icons/fa"
 import { InformationCircleIcon } from '@heroicons/react/solid'
+import { useRecoilState } from 'recoil'
+import { modalState, movieState } from '../atoms/modalAtom'
 
 // Need to do interface Props here too
 interface Props {
@@ -14,6 +16,8 @@ function Banner({netflixOriginals}: Props) {//same syntax as in index.tsx
 
   //use TypeScript to define useState type. Movie or null
   const [movie, setMovie] = useState<Movie | null>(null)
+  const [showModal, setShowModal] = useRecoilState(modalState)//for showing modal
+  const [currentMovie, setCurrentMovie] = useRecoilState(movieState)//currently selected movie. setCurrentMovie will change movieState in Recoil store
 
   useEffect(() => {
     // Use random number (from 0 to 1) multiplied by length of netflixOriginals array and take the floor to get a random index. Randomize which movie is shown
@@ -21,7 +25,6 @@ function Banner({netflixOriginals}: Props) {//same syntax as in index.tsx
     )
   },[netflixOriginals])//dependency array. dependent on netflixOriginals. Every time netflixOriginals changes useEffect code will execute
 
-  console.log(movie)
 
   return (
     // set styling for banner. Keep it from being behind the nav bar
@@ -46,11 +49,17 @@ function Banner({netflixOriginals}: Props) {//same syntax as in index.tsx
         {movie?.overview}
         </p>
 
+      {/* Banner buttons */}
       <div className="flex space-x-3">
         <button className="bannerButton bg-white text-black">
           <FaPlay className="h-4 2-4 text-black md:h-7 md:w-7"/>Play
           </button>
-        <button className="bannerButton bg-[gray]/70">
+        <button 
+        className="bannerButton bg-[gray]/70"
+        onClick={() => {
+          setCurrentMovie(movie)
+          setShowModal(true)
+        }}>
           More Info <InformationCircleIcon className="h-5 w-5 md:h-8 md:w-8"/>
           </button>
       </div>

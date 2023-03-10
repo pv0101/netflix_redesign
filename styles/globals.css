@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The styling here is overridden by the Tailwind inline styling for each tag, if there are any stylings that are the same but different values */
+
 /* 3 layers: base, components, utilities. 
 Can do CSS styling in any of the layers (body can go in components layer and not base) but it is convention and better practice to separate layers correctly? */
 
@@ -29,7 +31,18 @@ Can do CSS styling in any of the layers (body can go in components layer and not
         Also applies to using custom values for other properties? */
     }
 
+    /* For banner play and info buttons */
     .bannerButton {
         @apply flex items-center gap-x-2 rounded px-5 py-1.5 text-sm font-semibold transition hover:opacity-75 md:py-2.5 md:px-8 md:text-xl;
+    }
+
+    /* For login email and password input */
+    .input {
+        @apply w-full rounded bg-[#333] px-5 py-3.5 placeholder-[gray] outline-none focus:bg-[#454545];
+    }
+
+    /* For modal close button */
+    .modalButton {
+        @apply flex h-11 w-11 items-center justify-center rounded-full border-2 border-[gray] bg-[#2a2a2a]/60 transition hover:border-white hover:bg-white/10;
     }
 }

@@ -1,10 +1,14 @@
 //index is home page. Next.js lets you create pages (like login.ts) and it will auto redirect when you change url to /login unlike React which needs Routes
+import Modal from '../components/Modal'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
+import { useRecoilValue } from 'recoil'
+import { modalState } from '../atoms/modalAtom'
 import Banner from '../components/Banner'
 import Header from '../components/Header'
 import Row from '../components/Row'
+import useAuth from '../hooks/useAuth'
 import { Movie } from '../typings'
 import requests from '../utils/requests'
 
@@ -30,6 +34,12 @@ const Home = ({
   topRated,
   trendingNow,
   }: Props) => {
+    const { loading } = useAuth()//for loading state
+    const showModal = useRecoilValue(modalState) //hook is the same as useState, does the same thing but with Recoil all we need to use is their custom hook? hook accepts Recoil value
+    // useRecoilValue returns the value itself
+
+    if (loading) return null //loading state statement
+
   return (
     <div className="relative h-screen bg-gradient-to-b  lg:h-[140vh]">
       <Head>
@@ -54,7 +64,9 @@ const Home = ({
           <Row title="Documentaries" movies={documentaries} />
         </section>
       </main>
-      {/* Modal */}
+      {/* only show modal if showModal is true */}
+      {showModal && <Modal/>}
+      
     </div>
   )
 }

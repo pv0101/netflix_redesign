@@ -1,9 +1,11 @@
 import { BellIcon, SearchIcon } from '@heroicons/react/solid' //I am using v1.0.06 of heroicons to follow along with tutorial
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import useAuth from '../hooks/useAuth'
 
 function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const { logout } = useAuth()//for logging out
 
   useEffect(() => {//when component (Header) mounts this will execute because of empty dependency array. 
     //Does Header remount everytime you scroll on the page? It must be because otherwise this would only run one time.
@@ -56,13 +58,14 @@ function Header() {
         <p className="hidden lg:inline">Kids</p>
         <BellIcon className="h-6 w-6" />
         {/* href is required for Link in Typescript? */}
-        <Link href="/account">
+        {/* <Link href="/account"> */}
           <img 
+          onClick = {logout}
           src="https://rb.gy/g1pwyx" 
           alt="" 
           className="cursor-pointer rounded"
           />
-        </Link>
+        {/* </Link> */}
       </div>
     </header>
   );
