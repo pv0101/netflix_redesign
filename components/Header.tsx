@@ -2,6 +2,7 @@ import { BellIcon, SearchIcon } from '@heroicons/react/solid' //I am using v1.0.
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import useAuth from '../hooks/useAuth'
+import BasicMenu from './BasicMenu';
 
 function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -42,6 +43,8 @@ function Header() {
         />
         {/* Not using next.js image component because we are using a svg image which requires extra steps to use in next.js image component */}
 
+        <BasicMenu/>
+
         <ul className="hidden space-x-4 md:flex">
           <li className="headerLink">Home</li>
           {/* headerLink is custom class name */}
@@ -58,14 +61,14 @@ function Header() {
         <p className="hidden lg:inline">Kids</p>
         <BellIcon className="h-6 w-6" />
         {/* href is required for Link in Typescript? */}
-        {/* <Link href="/account"> */}
+        <Link href="/account">
           <img 
-          onClick = {logout}
+          // onClick = {logout} //used while /account page was not setup yet
           src="https://rb.gy/g1pwyx" 
           alt="" 
           className="cursor-pointer rounded"
           />
-        {/* </Link> */}
+        </Link>
       </div>
     </header>
   );

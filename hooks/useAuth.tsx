@@ -42,7 +42,8 @@ export const AuthProvider = ({children}: AuthProviderProps) => {
   const [initialLoading, setInitialLoading] = useState(true)
   const router = useRouter()
 
-  // For persisting state? When user is logged in and refreshes it will go back to login page. This code keeps user logged in on refresh.
+  // For persisting state? When user is logged in and refreshes it will go back to login page. This code keeps user logged in on refresh. 
+  //Observer for state change of user. or listener for user event
   // Persisting the user
   useEffect(
     () =>

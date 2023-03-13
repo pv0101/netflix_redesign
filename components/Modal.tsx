@@ -1,12 +1,22 @@
-import { PlusIcon, ThumbUpIcon, VolumeOffIcon, XIcon } from "@heroicons/react/outline";
+import {
+  CheckIcon,
+  PlusIcon,
+  ThumbUpIcon,
+  VolumeOffIcon,
+  XIcon,
+} from "@heroicons/react/outline";
 import MuiModal from "@mui/material/Modal";
 import { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { modalState, movieState } from "../atoms/modalAtom";
-import { Element, Genre } from "../typings";
+import { Element, Genre, Movie } from "../typings";
 import ReactPlayer from "react-player/lazy"; //use lazy load. won't load until needed
 import { FaPlay } from "react-icons/fa";
 import { VolumeUpIcon } from "@heroicons/react/solid";
+import { collection, deleteDoc, doc, DocumentData, onSnapshot, setDoc } from "firebase/firestore";
+import useAuth from "../hooks/useAuth";
+import { db } from "../firebase";
+import { toast, Toaster } from "react-hot-toast";
 
 function Modal() {
   const [showModal, setShowModal] = useRecoilState(modalState);
@@ -19,6 +29,23 @@ function Modal() {
   const [genres, setGenres] = useState<Genre[]>([]); //will be an array of genres with default value of empty array
 
   const [muted, setMuted] = useState(true); //make sure video is muted on start
+
+  const [addedToList, setAddedToList] = useState(false); //for adding to MyList
+
+  const { user } = useAuth(); //for adding movies to MyList
+
+  const [movies, setMovies] = useState<DocumentData[] | Movie[]>([]) //for checking MyList
+
+  // for toast styling
+  const toastStyle = {
+    background: 'white',
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: '16px',
+    padding: '15px',
+    borderRadius: '9999px',
+    maxWidth: '1000px',
+  }
 
   //every time we click a modal or movie changes, useEffect will fetch a video for us
   useEffect(() => {
@@ -52,18 +79,74 @@ function Modal() {
     fetchMovie();
   }, [movie]);
 
+  // This is used in conjunction with other useEffect to make sure plus/check icon on modal changes and movies are deleted/added to myList properly. without the useEffects we were only seeing the plus icon and only adding movies to myList because setAddedToList was not being used to update AddedToList (and because no re-rendering of modal?)
+  // Find all the movies in the user's list
+  useEffect(() => {
+    if (user) {
+      return onSnapshot(
+        collection(db, 'customers', user.uid, 'myList'),
+        (snapshot) => setMovies(snapshot.docs)//saves (snapshot of?) user's myList doc from firestore to movies variable
+      )
+    }
+  }, [db, movie?.id])
+
+  // This is used in conjunction with other useEffect to make sure plus/check icon on modal changes and movies are deleted/added to myList properly. without the useEffects we were only seeing the plus icon and only adding movies to myList because setAddedToList was not being used to update AddedToList (and because no re-rendering of modal?)
+  // Check if the movie is already in the user's list
+  useEffect(
+    () =>
+      setAddedToList(
+        movies.findIndex((result) => result.data().id === movie?.id) !== -1 //goes through movies in MyList and sees if any match the currently selected movie in the modal. If not, setAddedToList(false)
+      ),
+    [movies]
+  )
+
+
+  // function for handling MyList buttons
+  const handleList = async () => {
+    if (addedToList) {
+      await deleteDoc(
+        doc(db, 'customers', user!.uid, 'myList', movie?.id.toString()!)
+      )
+
+      toast(
+        `${movie?.title || movie?.original_name} has been removed from My List`,
+        {
+          duration: 8000,
+          style: toastStyle
+        }
+      )
+    } else {
+      //if movie is not already added to the list, create/go to MyList doc and add movie to it
+      await setDoc(
+        doc(db, 'customers', user!.uid, 'myList', movie?.id.toString()!),
+        { ...movie, }//whatever movie contains, spread and use all those parameters
+      )
+
+      toast(
+        `${movie?.title || movie?.original_name} has been added to My List`,
+        {
+          duration: 8000,
+          style: toastStyle
+        }
+      )
+    }
+  };
+
   // separate function for closing modal because we want to be able to click on overlay outside of modal to close or press the X in the corner of the modal
   const handleClose = () => {
     setShowModal(false);
   };
   return (
     // modal is open based on showModal state
-    <MuiModal 
-    open={showModal} 
-    onClose={handleClose} 
-    className="fixex !top-7 left-0 right-0 z-50 mx-auto w-full max-w-5xl overflow-hidden overflow-y-scroll rounded-md scrollbar-hide">
+    <MuiModal
+      open={showModal}
+      onClose={handleClose}
+      className="fixex !top-7 left-0 right-0 z-50 mx-auto w-full max-w-5xl overflow-hidden overflow-y-scroll rounded-md scrollbar-hide"
+    >
       <>
-      {/* button for closing modal */}
+        {/* For pop up notification when MyList is changed */}
+        <Toaster position="bottom-center" />
+        {/* button for closing modal */}
         <button
           onClick={handleClose}
           className="modalButton absolute right-5 top-5 !z-40 h-9 w-9 border-none bg-[#181818] hover:bg-[#181818]"
@@ -89,9 +172,13 @@ function Modal() {
                 Play
               </button>
 
-              {/* Add to list button */}
-              <button className="modalButton">
-                <PlusIcon className="h-7 w-7"/>
+              {/* Add to MyList button */}
+              <button className="modalButton" onClick={handleList}>
+                {addedToList ? ( //change which icon used depending on whether movie has been added to MyList
+                  <CheckIcon className="h-7 w-7" />
+                ) : (
+                  <PlusIcon className="h-7 w-7" />
+                )}
               </button>
 
               {/* Thumbs Up icon */}
@@ -102,7 +189,11 @@ function Modal() {
 
             {/* Mute control button */}
             <button className="modalButton" onClick={() => setMuted(!muted)}>
-              {muted ? <VolumeOffIcon className="h-6 w-6"/> : <VolumeUpIcon className="h-6 w-6"/>}
+              {muted ? (
+                <VolumeOffIcon className="h-6 w-6" />
+              ) : (
+                <VolumeUpIcon className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -112,11 +203,15 @@ function Modal() {
           <div className="space-y-6 text-lg">
             <div className="flex items-center space-x-2 text-sm">
               {/* Vote percentage */}
-              <p className="font-semibold text-green-400">{movie!.vote_average * 10}% Match</p>
-              
+              <p className="font-semibold text-green-400">
+                {movie!.vote_average * 10}% Match
+              </p>
+
               {/* Release Date */}
-              <p className="font-light">{movie?.release_date || movie?.first_air_date}</p>
-              
+              <p className="font-light">
+                {movie?.release_date || movie?.first_air_date}
+              </p>
+
               {/* HD  symbol */}
               <div className="flex h-4 items-center justify-center rounded border border-white/40 px-1.5 text-xs">
                 HD
@@ -133,7 +228,7 @@ function Modal() {
                   {/* Genres list */}
                   <span className="text-[gray]">Genres: </span>
                   {/* map through all genre names associated with movie and join them with commas */}
-                  {genres.map((genre) => genre.name).join(', ')}
+                  {genres.map((genre) => genre.name).join(", ")}
                 </div>
 
                 {/* Language */}
@@ -147,10 +242,8 @@ function Modal() {
                   <span className="text-[gray]">Total votes: </span>
                   {movie?.vote_count}
                 </div>
-
               </div>
             </div>
-
           </div>
         </div>
       </>

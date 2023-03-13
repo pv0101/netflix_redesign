@@ -4,13 +4,18 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import { useRecoilValue } from 'recoil'
-import { modalState } from '../atoms/modalAtom'
+import { modalState, movieState } from '../atoms/modalAtom'
 import Banner from '../components/Banner'
 import Header from '../components/Header'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
 import { Movie } from '../typings'
 import requests from '../utils/requests'
+import Plans from '../components/Plans'
+import { getProducts, Product } from '@stripe/firestore-stripe-payments'
+import payments from '../lib/stripe'
+import useSubscription from '../hooks/useSubscription'
+import useList from '../hooks/useList'
 
 interface Props {
   netflixOriginals: Movie[]//netflixOriginals will be array of different Movies
@@ -21,6 +26,7 @@ interface Props {
   horrorMovies: Movie[]
   romanceMovies: Movie[]
   documentaries: Movie[]
+  products: Product[] //Product type is from Stripe package
 }
 
 // When using TypeScript need to provide data type. Props interface defined above
@@ -33,15 +39,28 @@ const Home = ({
   romanceMovies,
   topRated,
   trendingNow,
+  products
   }: Props) => {
-    const { loading } = useAuth()//for loading state
+    const { loading, user } = useAuth()//custom hook for loading state and subscription 
     const showModal = useRecoilValue(modalState) //hook is the same as useState, does the same thing but with Recoil all we need to use is their custom hook? hook accepts Recoil value
     // useRecoilValue returns the value itself
 
-    if (loading) return null //loading state statement
+    const subscription = useSubscription(user)//use custom hook. 
+
+    const movie = useRecoilValue(movieState) //currently selected? movie inside Recoil store. 
+    
+    const list = useList(user?.uid) //use custom hook to get MyList for a particular user
+
+    if (loading || subscription === null) return null //loading state statement
+
+    if (!subscription) return <Plans products={products}/>
 
   return (
-    <div className="relative h-screen bg-gradient-to-b  lg:h-[140vh]">
+    <div 
+    className={`relative h-screen bg-gradient-to-b  lg:h-[140vh] 
+    ${showModal && "!h-screen overflow-hidden"}`}
+    // if modal is showing disable scroll
+    >
       <Head>
         <title>Home - Netflix</title>
         <link rel="icon" href="/favicon.ico" />
@@ -58,6 +77,7 @@ const Home = ({
           <Row title="Top Rated" movies={topRated} />
           <Row title="Action Thrillers" movies={actionMovies} />
           {/* My List Component*/}
+         {list.length > 0 && <Row title="My List" movies={list} />}
           <Row title="Comedies" movies={comedyMovies} />
           <Row title="Scary Movies" movies={horrorMovies} />
           <Row title="Romance Movies" movies={romanceMovies} />
@@ -73,8 +93,15 @@ const Home = ({
 
 export default Home
 
-// Server side rendering
+// Server side rendering for movies and subscription plans
 export const getServerSideProps = async () => {
+const products = await getProducts(payments, {//getProducts is function from Stripe
+  includePrices:true,
+      activeOnly: true //products can be archives or rendered inactive in Stripe. Want only active ones
+    })
+    .then((res) => res)
+    .catch((error) => console.log(error.message))
+
   const [
     netflixOriginals,
     trendingNow,
@@ -106,6 +133,7 @@ export const getServerSideProps = async () => {
       horrorMovies: horrorMovies.results,
       romanceMovies: romanceMovies.results,
       documentaries: documentaries.results,
+      products, //return subscription plans as prop
     },
   }
 }
