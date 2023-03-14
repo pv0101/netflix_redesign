@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Image from "next/legacy/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { SubmitHandler } from "react-hook-form/dist/types";
 import useAuth from "../hooks/useAuth";
@@ -33,6 +33,11 @@ function Login() {
       await signUp(email, password)
     }
   }
+
+  // alert giving showcase instruction for viewer.  
+  useEffect(() => {
+    alert('Sign up with any email and password combination. Use a Stripe test card for subscription: https://stripe.com/docs/testing')
+  },[])
 
   return (
     // Image has layout="fill" so parent needs to be relative or absolute
@@ -121,5 +126,5 @@ function Login() {
     </div>
   );
 }
-
+    
 export default Login;
